@@ -12,7 +12,7 @@
                     "desc": "Intentaste ingresar con una cuenta migrada. Intenta de nuevo con el email en vez del nombre de usuario."
                 },
                 "invalidCredentials": {
-                    "title": "Error Durante el ingreso:<br>Invalid Credentials",
+                    "title": "Error Durante el ingreso:<br>Credenciales invalidas",
                     "desc": "El email o contraseña ingresados son incorrectos. Si quieres jugar offline deja el campo de contraseña vacío."
                 },
                 "rateLimit": {
