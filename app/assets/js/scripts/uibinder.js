@@ -317,7 +317,8 @@ function refreshDistributionIndex(remote, onSuccess, onError){
 async function validateSelectedAccount(){
     const selectedAcc = ConfigManager.getSelectedAccount()
     if(selectedAcc != null){
-        const val = await AuthManager.validateSelected()
+        //const val = await AuthManager.validateSelected()
+        const val = true
         if(!val){
             ConfigManager.removeAuthAccount(selectedAcc.uuid)
             ConfigManager.save()
