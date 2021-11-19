@@ -19,7 +19,7 @@ const loginButton           = document.getElementById('loginButton')
 const loginForm             = document.getElementById('loginForm')
 
 // Control variables.
-let lu = false, lp = false
+let lu = false, lp = true
 
 const loggerLogin = LoggerUtil('%c[Login]', 'color: #000668; font-weight: bold')
 
@@ -97,17 +97,9 @@ loginUsername.addEventListener('focusout', (e) => {
     validateEmail(e.target.value)
     shakeError(loginEmailError)
 })
-loginPassword.addEventListener('focusout', (e) => {
-    validatePassword(e.target.value)
-    shakeError(loginPasswordError)
-})
-
 // Validate input for each field.
 loginUsername.addEventListener('input', (e) => {
     validateEmail(e.target.value)
-})
-loginPassword.addEventListener('input', (e) => {
-    validatePassword(e.target.value)
 })
 
 /**
@@ -262,7 +254,27 @@ loginButton.addEventListener('click', () => {
     // Show loading stuff.
     loginLoading(true)
 
-    AuthManager.addAccount(loginUsername.value, loginPassword.value).then((value) => {
+    if (loginPassword.value == '' && validUsername.test(loginUsername.value)){
+        processLogin(AuthManager.addAccountCracked(loginUsername.value))
+
+    }else{
+
+        AuthManager.addAccount(loginUsername.value, loginPassword.value).then((value) => {
+            processLogin(value)
+        }).catch((err) => {
+            loginLoading(false)
+            const errF = resolveError(err)
+            setOverlayContent(errF.title, errF.desc, Lang.queryJS('login.tryAgain'))
+            setOverlayHandler(() => {
+                formDisabled(false)
+                toggleOverlay(false)
+            })
+            toggleOverlay(true)
+            loggerLogin.log('Error while logging in.', err)
+        })
+    }
+
+    function processLogin(value){
         updateSelectedAccount(value)
         loginButton.innerHTML = loginButton.innerHTML.replace(Lang.queryJS('login.loggingIn'), Lang.queryJS('login.success'))
         $('.circle-loader').toggleClass('load-complete')
@@ -285,16 +297,5 @@ loginButton.addEventListener('click', () => {
                 formDisabled(false)
             })
         }, 1000)
-    }).catch((err) => {
-        loginLoading(false)
-        const errF = resolveError(err)
-        setOverlayContent(errF.title, errF.desc, Lang.queryJS('login.tryAgain'))
-        setOverlayHandler(() => {
-            formDisabled(false)
-            toggleOverlay(false)
-        })
-        toggleOverlay(true)
-        loggerLogin.log('Error while logging in.', err)
-    })
-
+    }
 })

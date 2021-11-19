@@ -391,14 +391,13 @@ function processLogOut(val, isLastAccount){
     const parent = val.closest('.settingsAuthAccount')
     const uuid = parent.getAttribute('uuid')
     const prevSelAcc = ConfigManager.getSelectedAccount()
-    AuthManager.removeAccount(uuid).then(() => {
-        if(!isLastAccount && uuid === prevSelAcc.uuid){
-            const selAcc = ConfigManager.getSelectedAccount()
-            refreshAuthAccountSelected(selAcc.uuid)
-            updateSelectedAccount(selAcc)
-            validateSelectedAccount()
-        }
-    })
+    AuthManager.removeAccount(uuid)
+    if(!isLastAccount && uuid === prevSelAcc.uuid){
+        const selAcc = ConfigManager.getSelectedAccount()
+        refreshAuthAccountSelected(selAcc.uuid)
+        updateSelectedAccount(selAcc)
+        validateSelectedAccount()
+    }
     $(parent).fadeOut(250, () => {
         parent.remove()
     })

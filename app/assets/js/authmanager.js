@@ -14,6 +14,7 @@ const LoggerUtil    = require('./loggerutil')
 const Mojang        = require('./mojang')
 const logger        = LoggerUtil('%c[AuthManager]', 'color: #a02d2a; font-weight: bold')
 const loggerSuccess = LoggerUtil('%c[AuthManager]', 'color: #209b07; font-weight: bold')
+const { v5: uuidv5 } = require('uuid');
 
 // Functions
 
@@ -45,6 +46,16 @@ exports.addAccount = async function(username, password){
     }
 }
 
+exports.addAccountCracked = function(username){
+    const ret = ConfigManager.addAuthAccount(uuidv5(username, uuidv5.DNS), 'Cracked', username, username)
+    if (ConfigManager.getClientToken() == null) {
+        ConfigManager.setClientToken('Cracked')
+    }
+    ConfigManager.save()
+    console.log(ret);
+    return ret
+}
+
 /**
  * Remove an account. This will invalidate the access token associated
  * with the account and then remove it from the database.
@@ -52,18 +63,10 @@ exports.addAccount = async function(username, password){
  * @param {string} uuid The UUID of the account to be removed.
  * @returns {Promise.<void>} Promise which resolves to void when the action is complete.
  */
-exports.removeAccount = async function(uuid){
-    try {
-        const authAcc = ConfigManager.getAuthAccount(uuid)
-        await Mojang.invalidate(authAcc.accessToken, ConfigManager.getClientToken())
+exports.removeAccount = function(uuid){
         ConfigManager.removeAuthAccount(uuid)
         ConfigManager.save()
-        return Promise.resolve()
-    } catch (err){
-        return Promise.reject(err)
-    }
 }
-
 /**
  * Validate the selected account with Mojang's authserver. If the account is not valid,
  * we will attempt to refresh the access token and update that value. If that fails, a
