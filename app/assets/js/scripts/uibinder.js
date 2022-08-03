@@ -16,9 +16,11 @@ let fatalStartupError = false
 // Mapping of each view to their container IDs.
 const VIEWS = {
     landing: '#landingContainer',
+    loginOptions: '#loginOptionsContainer',
     login: '#loginContainer',
     settings: '#settingsContainer',
-    welcome: '#welcomeContainer'
+    welcome: '#welcomeContainer',
+    waiting: '#waitingContainer'
 }
 
 // The currently shown view container.
@@ -86,8 +88,11 @@ function showMainUI(data){
                 currentView = VIEWS.landing
                 $(VIEWS.landing).fadeIn(1000)
             } else {
-                currentView = VIEWS.login
-                $(VIEWS.login).fadeIn(1000)
+                loginOptionsCancelEnabled(false)
+                loginOptionsViewOnLoginSuccess = VIEWS.landing
+                loginOptionsViewOnLoginCancel = VIEWS.loginOptions
+                currentView = VIEWS.loginOptions
+                $(VIEWS.loginOptions).fadeIn(1000)
             }
         }
 
@@ -317,8 +322,7 @@ function refreshDistributionIndex(remote, onSuccess, onError){
 async function validateSelectedAccount(){
     const selectedAcc = ConfigManager.getSelectedAccount()
     if(selectedAcc != null){
-        //const val = await AuthManager.validateSelected()
-        const val = true
+        const val = await AuthManager.validateSelected()
         if(!val){
             ConfigManager.removeAuthAccount(selectedAcc.uuid)
             ConfigManager.save()
@@ -330,20 +334,52 @@ async function validateSelectedAccount(){
                 'Select Another Account'
             )
             setOverlayHandler(() => {
-                document.getElementById('loginUsername').value = selectedAcc.username
-                validateEmail(selectedAcc.username)
-                loginViewOnSuccess = getCurrentView()
-                loginViewOnCancel = getCurrentView()
-                if(accLen > 0){
-                    loginViewCancelHandler = () => {
-                        ConfigManager.addAuthAccount(selectedAcc.uuid, selectedAcc.accessToken, selectedAcc.username, selectedAcc.displayName)
+
+                const isMicrosoft = selectedAcc.type === 'microsoft'
+
+                if(isMicrosoft) {
+                    // Empty for now
+                } else {
+                    // Mojang
+                    // For convenience, pre-populate the username of the account.
+                    document.getElementById('loginUsername').value = selectedAcc.username
+                    validateEmail(selectedAcc.username)
+                }
+                
+                loginOptionsViewOnLoginSuccess = getCurrentView()
+                loginOptionsViewOnLoginCancel = VIEWS.loginOptions
+
+                if(accLen > 0) {
+                    loginOptionsViewOnCancel = getCurrentView()
+                    loginOptionsViewCancelHandler = () => {
+                        switch(selectedAcc.type){
+                            case 'microsoft':
+                                ConfigManager.addMicrosoftAuthAccount(
+                                    selectedAcc.uuid,
+                                    selectedAcc.accessToken,
+                                    selectedAcc.username,
+                                    selectedAcc.expiresAt,
+                                    selectedAcc.microsoft.access_token,
+                                    selectedAcc.microsoft.refresh_token,
+                                    selectedAcc.microsoft.expires_at
+                                )
+                            break;
+                            case 'mojang':
+                                ConfigManager.addMojangAuthAccount(selectedAcc.uuid, selectedAcc.accessToken, selectedAcc.username, selectedAcc.displayName)
+                            break;
+                            case 'cracked':
+                                ConfigManager.addCrackedAuthAccount(selectedAcc.uuid, selectedAcc.accessToken, selectedAcc.username, selectedAcc.displayName)
+                            break;
+                        }
                         ConfigManager.save()
                         validateSelectedAccount()
                     }
-                    loginCancelEnabled(true)
+                    loginOptionsCancelEnabled(true)
+                } else {
+                    loginOptionsCancelEnabled(false)
                 }
                 toggleOverlay(false)
-                switchView(getCurrentView(), VIEWS.login)
+                switchView(getCurrentView(), VIEWS.loginOptions)
             })
             setDismissHandler(() => {
                 if(accLen > 1){

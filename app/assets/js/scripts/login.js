@@ -17,11 +17,13 @@ const checkmarkContainer    = document.getElementById('checkmarkContainer')
 const loginRememberOption   = document.getElementById('loginRememberOption')
 const loginButton           = document.getElementById('loginButton')
 const loginForm             = document.getElementById('loginForm')
+const loginOptionsElement   = document.getElementById('loginOptions')
+const loginDisclaimer       = document.getElementById('loginDisclaimer')
 
 // Control variables.
-let lu = false, lp = true
+let lu = false, lp = false
 
-const loggerLogin = LoggerUtil('%c[Login]', 'color: #000668; font-weight: bold')
+const loggerLogin = LoggerUtil1('%c[Login]', 'color: #000668; font-weight: bold')
 
 
 /**
@@ -62,7 +64,7 @@ function validateEmail(value){
         } else {
             loginEmailError.style.opacity = 0
             lu = true
-            if(lp){
+            if(lp || cracking){
                 loginDisabled(false)
             }
         }
@@ -79,7 +81,7 @@ function validateEmail(value){
  * @param {string} value The password value.
  */
 function validatePassword(value){
-    if(value){
+    if(value || cracking){
         loginPasswordError.style.opacity = 0
         lp = true
         if(lu){
@@ -97,9 +99,17 @@ loginUsername.addEventListener('focusout', (e) => {
     validateEmail(e.target.value)
     shakeError(loginEmailError)
 })
+loginPassword.addEventListener('focusout', (e) => {
+    validatePassword(e.target.value)
+    shakeError(loginPasswordError)
+})
+
 // Validate input for each field.
 loginUsername.addEventListener('input', (e) => {
     validateEmail(e.target.value)
+})
+loginPassword.addEventListener('input', (e) => {
+    validatePassword(e.target.value)
 })
 
 /**
@@ -146,79 +156,6 @@ function formDisabled(v){
     loginRememberOption.disabled = v
 }
 
-/**
- * Parses an error and returns a user-friendly title and description
- * for our error overlay.
- * 
- * @param {Error | {cause: string, error: string, errorMessage: string}} err A Node.js
- * error or Mojang error response.
- */
-function resolveError(err){
-    // Mojang Response => err.cause | err.error | err.errorMessage
-    // Node error => err.code | err.message
-    if(err.cause != null && err.cause === 'UserMigratedException') {
-        return {
-            title: Lang.queryJS('login.error.userMigrated.title'),
-            desc: Lang.queryJS('login.error.userMigrated.desc')
-        }
-    } else {
-        if(err.error != null){
-            if(err.error === 'ForbiddenOperationException'){
-                if(err.errorMessage != null){
-                    if(err.errorMessage === 'Credenciales invalidas. Usuario o contraseña inválidos.'){
-                        return {
-                            title: Lang.queryJS('login.error.invalidCredentials.title'),
-                            desc: Lang.queryJS('login.error.invalidCredentials.desc')
-                        }
-                    } else if(err.errorMessage === 'Credenciales invalidas.'){
-                        return {
-                            title: Lang.queryJS('login.error.rateLimit.title'),
-                            desc: Lang.queryJS('login.error.rateLimit.desc')
-                        }
-                    }
-                }
-            }
-        } else {
-            // Request errors (from Node).
-            if(err.code != null){
-                if(err.code === 'ENOENT'){
-                    // No Internet.
-                    return {
-                        title: Lang.queryJS('login.error.noInternet.title'),
-                        desc: Lang.queryJS('login.error.noInternet.desc')
-                    }
-                } else if(err.code === 'ENOTFOUND'){
-                    // Could not reach server.
-                    return {
-                        title: Lang.queryJS('login.error.authDown.title'),
-                        desc: Lang.queryJS('login.error.authDown.desc')
-                    }
-                }
-            }
-        }
-    }
-    if(err.message != null){
-        if(err.message === 'NotPaidAccount'){
-            return {
-                title: Lang.queryJS('login.error.notPaid.title'),
-                desc: Lang.queryJS('login.error.notPaid.desc')
-            }
-        } else {
-            // Unknown error with request.
-            return {
-                title: Lang.queryJS('login.error.unknown.title'),
-                desc: err.message
-            }
-        }
-    } else {
-        // Unknown Mojang error.
-        return {
-            title: err.error,
-            desc: err.errorMessage
-        }
-    }
-}
-
 let loginViewOnSuccess = VIEWS.landing
 let loginViewOnCancel = VIEWS.settings
 let loginViewCancelHandler
@@ -246,6 +183,55 @@ loginCancelButton.onclick = (e) => {
 // Disable default form behavior.
 loginForm.onsubmit = () => { return false }
 
+function loginCorrecto(value){
+    updateSelectedAccount(value)
+    loginButton.innerHTML = loginButton.innerHTML.replace(Lang.queryJS('login.loggingIn'), Lang.queryJS('login.success'))
+    $('.circle-loader').toggleClass('load-complete')
+    $('.checkmark').toggle()
+    setTimeout(() => {
+        switchView(VIEWS.login, loginViewOnSuccess, 500, 500, () => {
+            // Temporary workaround
+            if(loginViewOnSuccess === VIEWS.settings){
+                prepareSettings()
+            }
+            loginViewOnSuccess = VIEWS.landing // Reset this for good measure.
+            loginCancelEnabled(false) // Reset this for good measure.
+            loginViewCancelHandler = null // Reset this for good measure.
+            loginUsername.value = ''
+            loginPassword.value = ''
+            $('.circle-loader').toggleClass('load-complete')
+            $('.checkmark').toggle()
+            loginLoading(false)
+            loginButton.innerHTML = loginButton.innerHTML.replace(Lang.queryJS('login.success'), Lang.queryJS('login.login'))
+            formDisabled(false)
+        })
+    }, 1000);
+}
+
+function loginIncorrecto(displayableError){
+    loginLoading(false)
+    
+    let actualDisplayableError
+    if(isDisplayableError(displayableError)) {
+        msftLoginLogger.error('Error while logging in.', displayableError)
+        actualDisplayableError = displayableError
+    } else {
+        // Uh oh.
+        msftLoginLogger.error('Unhandled error during login.', displayableError)
+        actualDisplayableError = {
+            title: 'Unknown Error During Login',
+            desc: 'An unknown error has occurred. Please see the console for details.'
+        }
+    }
+
+    setOverlayContent(actualDisplayableError.title, actualDisplayableError.desc, Lang.queryJS('login.tryAgain'))
+    setOverlayHandler(() => {
+        formDisabled(false)
+        toggleOverlay(false)
+    })
+    toggleOverlay(true)
+}
+
 // Bind login button behavior.
 loginButton.addEventListener('click', () => {
     // Disable form.
@@ -254,48 +240,14 @@ loginButton.addEventListener('click', () => {
     // Show loading stuff.
     loginLoading(true)
 
-    if (loginPassword.value == '' && validUsername.test(loginUsername.value)){
-        processLogin(AuthManager.addAccountCracked(loginUsername.value))
-
+    if (cracking){
+        AuthManager.addCrackedAccount(loginUsername.value).then((value) => {
+            loginCorrecto(value);
+        }).catch((displayableError) => {loginIncorrecto(displayableError)})
     }else{
-
-        AuthManager.addAccount(loginUsername.value, loginPassword.value).then((value) => {
-            processLogin(value)
-        }).catch((err) => {
-            loginLoading(false)
-            const errF = resolveError(err)
-            setOverlayContent(errF.title, errF.desc, Lang.queryJS('login.tryAgain'))
-            setOverlayHandler(() => {
-                formDisabled(false)
-                toggleOverlay(false)
-            })
-            toggleOverlay(true)
-            loggerLogin.log('Error mientras se intentaba logear.', err)
-        })
+        AuthManager.addMojangAccount(loginUsername.value, loginPassword.value).then((value) => {
+            loginCorrecto(value);
+        }).catch((displayableError) => {loginIncorrecto(displayableError)})
     }
 
-    function processLogin(value){
-        updateSelectedAccount(value)
-        loginButton.innerHTML = loginButton.innerHTML.replace(Lang.queryJS('login.loggingIn'), Lang.queryJS('login.success'))
-        $('.circle-loader').toggleClass('load-complete')
-        $('.checkmark').toggle()
-        setTimeout(() => {
-            switchView(VIEWS.login, loginViewOnSuccess, 500, 500, () => {
-                // Temporary workaround
-                if(loginViewOnSuccess === VIEWS.settings){
-                    prepareSettings()
-                }
-                loginViewOnSuccess = VIEWS.landing // Reset this for good measure.
-                loginCancelEnabled(false) // Reset this for good measure.
-                loginViewCancelHandler = null // Reset this for good measure.
-                loginUsername.value = ''
-                loginPassword.value = ''
-                $('.circle-loader').toggleClass('load-complete')
-                $('.checkmark').toggle()
-                loginLoading(false)
-                loginButton.innerHTML = loginButton.innerHTML.replace(Lang.queryJS('login.success'), Lang.queryJS('login.login'))
-                formDisabled(false)
-            })
-        }, 1000)
-    }
 })
