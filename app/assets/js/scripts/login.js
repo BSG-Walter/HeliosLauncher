@@ -213,14 +213,14 @@ function loginIncorrecto(displayableError){
     
     let actualDisplayableError
     if(isDisplayableError(displayableError)) {
-        msftLoginLogger.error('Error while logging in.', displayableError)
+        msftLoginLogger.error('Error al intentar logear.', displayableError)
         actualDisplayableError = displayableError
     } else {
         // Uh oh.
-        msftLoginLogger.error('Unhandled error during login.', displayableError)
+        msftLoginLogger.error('Error desconocido durante el logeo.', displayableError)
         actualDisplayableError = {
-            title: 'Unknown Error During Login',
-            desc: 'An unknown error has occurred. Please see the console for details.'
+            title: 'Error desconocido durante el logeo',
+            desc: 'Revisa la consola para mas información.'
         }
     }
 

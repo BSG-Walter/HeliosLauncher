@@ -114,9 +114,9 @@ function showFatalStartupError(){
         $('#loadingContainer').fadeOut(250, () => {
             document.getElementById('overlayContainer').style.background = 'none'
             setOverlayContent(
-                'Fatal Error: Unable to Load Distribution Index',
-                'A connection could not be established to our servers to download the distribution index. No local copies were available to load. <br><br>The distribution index is an essential file which provides the latest server information. The launcher is unable to start without it. Ensure you are connected to the internet and relaunch the application.',
-                'Close'
+                'Error fatal: No se pudo cargar el archivo de distribución',
+                'No se pudo establecer una conexión con el servidor de archivos. Tampoco se encontró una copia local del archivo de distribución. <br><br>Sin este archivo el launcher no puede continuar con su funcionamiento, asegúrate de estar conectado a internet e inténtalo de nuevo..',
+                'Cerrar'
             )
             setOverlayHandler(() => {
                 const window = remote.getCurrentWindow()
@@ -328,10 +328,10 @@ async function validateSelectedAccount(){
             ConfigManager.save()
             const accLen = Object.keys(ConfigManager.getAuthAccounts()).length
             setOverlayContent(
-                'Failed to Refresh Login',
-                `We were unable to refresh the login for <strong>${selectedAcc.displayName}</strong>. Please ${accLen > 0 ? 'select another account or ' : ''} login again.`,
-                'Login',
-                'Select Another Account'
+                'No se pudo actualizar el login',
+                `No se pudo actualizar el login para <strong>${selectedAcc.displayName}</strong>. Please ${accLen > 0 ? 'selecciona otra cuenta o ' : ''} logea de nuevo.`,
+                'Logear',
+                'Seleccionar otra cuenta'
             )
             setOverlayHandler(() => {
 
