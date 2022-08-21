@@ -5,13 +5,12 @@
 const cp                      = require('child_process')
 const crypto                  = require('crypto')
 const { URL }                 = require('url')
-const { getServerStatus }     = require('helios-core')
+const { MojangRestAPI, getServerStatus }     = require('helios-core/mojang')
 
 // Internal Requirements
 const DiscordWrapper          = require('./assets/js/discordwrapper')
-const Mojang                  = require('./assets/js/mojang')
 const ProcessBuilder          = require('./assets/js/processbuilder')
-const ServerStatus            = require('./assets/js/serverstatus')
+const { RestResponseStatus, isDisplayableError } = require('helios-core/common')
 
 // Launch Elements
 const launch_content          = document.getElementById('launch_content')
@@ -22,7 +21,7 @@ const launch_details_text     = document.getElementById('launch_details_text')
 const server_selection_button = document.getElementById('server_selection_button')
 const user_text               = document.getElementById('user_text')
 
-const loggerLanding = LoggerUtil('%c[Landing]', 'color: #000668; font-weight: bold')
+const loggerLanding = LoggerUtil1('%c[Landing]', 'color: #000668; font-weight: bold')
 
 /* Launch Progress Wrapper Functions */
 
@@ -166,55 +165,57 @@ const refreshMojangStatuses = async function(){
     let tooltipEssentialHTML = ''
     let tooltipNonEssentialHTML = ''
 
-    try {
-        const statuses = await Mojang.status()
-        greenCount = 0
-        greyCount = 0
-
-        for(let i=0; i<statuses.length; i++){
-            const service = statuses[i]
-
-            if(service.essential){
-                tooltipEssentialHTML += `<div class="mojangStatusContainer">
-                    <span class="mojangStatusIcon" style="color: ${Mojang.statusToHex(service.status)};">&#8226;</span>
-                    <span class="mojangStatusName">${service.name}</span>
-                </div>`
-            } else {
-                tooltipNonEssentialHTML += `<div class="mojangStatusContainer">
-                    <span class="mojangStatusIcon" style="color: ${Mojang.statusToHex(service.status)};">&#8226;</span>
-                    <span class="mojangStatusName">${service.name}</span>
-                </div>`
-            }
-
-            if(service.status === 'yellow' && status !== 'red'){
-                status = 'yellow'
-            } else if(service.status === 'red'){
-                status = 'red'
-            } else {
-                if(service.status === 'grey'){
-                    ++greyCount
-                }
-                ++greenCount
-            }
-
-        }
-
-        if(greenCount === statuses.length){
-            if(greyCount === statuses.length){
-                status = 'grey'
-            } else {
-                status = 'green'
-            }
-        }
-
-    } catch (err) {
+    const response = await MojangRestAPI.status()
+    let statuses
+    if(response.responseStatus === RestResponseStatus.SUCCESS) {
+        statuses = response.data
+    } else {
         loggerLanding.warn('Unable to refresh Mojang service status.')
-        loggerLanding.debug(err)
+        statuses = MojangRestAPI.getDefaultStatuses()
+    }
+    
+    greenCount = 0
+    greyCount = 0
+
+    for(let i=0; i<statuses.length; i++){
+        const service = statuses[i]
+
+        if(service.essential){
+            tooltipEssentialHTML += `<div class="mojangStatusContainer">
+                <span class="mojangStatusIcon" style="color: ${MojangRestAPI.statusToHex(service.status)};">&#8226;</span>
+                <span class="mojangStatusName">${service.name}</span>
+            </div>`
+        } else {
+            tooltipNonEssentialHTML += `<div class="mojangStatusContainer">
+                <span class="mojangStatusIcon" style="color: ${MojangRestAPI.statusToHex(service.status)};">&#8226;</span>
+                <span class="mojangStatusName">${service.name}</span>
+            </div>`
+        }
+
+        if(service.status === 'yellow' && status !== 'red'){
+            status = 'yellow'
+        } else if(service.status === 'red'){
+            status = 'red'
+        } else {
+            if(service.status === 'grey'){
+                ++greyCount
+            }
+            ++greenCount
+        }
+
+    }
+
+    if(greenCount === statuses.length){
+        if(greyCount === statuses.length){
+            status = 'grey'
+        } else {
+            status = 'green'
+        }
     }
     
     document.getElementById('mojangStatusEssentialContainer').innerHTML = tooltipEssentialHTML
     document.getElementById('mojangStatusNonEssentialContainer').innerHTML = tooltipNonEssentialHTML
-    document.getElementById('mojang_status_icon').style.color = Mojang.statusToHex(status)
+    document.getElementById('mojang_status_icon').style.color = MojangRestAPI.statusToHex(status)
 }
 
 const refreshServerStatus = async function(fade = false){
@@ -229,7 +230,7 @@ const refreshServerStatus = async function(fade = false){
 
         const servStat = await getServerStatus(47, serverURL.hostname, Number(serverURL.port))
         console.log(servStat)
-        pLabel = 'JUGADORES'
+        pLabel = 'PLAYERS'
         pVal = servStat.players.online + '/' + servStat.players.max
 
     } catch (err) {
@@ -292,7 +293,7 @@ function asyncSystemScan(mcVersion, launchAfter = true){
     toggleLaunchArea(true)
     setLaunchPercentage(0, 100)
 
-    const loggerSysAEx = LoggerUtil('%c[SysAEx]', 'color: #353232; font-weight: bold')
+    const loggerSysAEx = LoggerUtil1('%c[SysAEx]', 'color: #353232; font-weight: bold')
 
     const forkEnv = JSON.parse(JSON.stringify(process.env))
     forkEnv.CONFIG_DIRECT_PATH = ConfigManager.getLauncherDirectory()
@@ -494,8 +495,8 @@ function dlAsync(login = true){
     toggleLaunchArea(true)
     setLaunchPercentage(0, 100)
 
-    const loggerAEx = LoggerUtil('%c[AEx]', 'color: #353232; font-weight: bold')
-    const loggerLaunchSuite = LoggerUtil('%c[LaunchSuite]', 'color: #000668; font-weight: bold')
+    const loggerAEx = LoggerUtil1('%c[AEx]', 'color: #353232; font-weight: bold')
+    const loggerLaunchSuite = LoggerUtil1('%c[LaunchSuite]', 'color: #000668; font-weight: bold')
 
     const forkEnv = JSON.parse(JSON.stringify(process.env))
     forkEnv.CONFIG_DIRECT_PATH = ConfigManager.getLauncherDirectory()
