@@ -76,10 +76,8 @@ const DEFAULT_CONFIG = {
             maxRAM: resolveMaxRAM(), // Dynamic
             executable: null,
             jvmOptions: [
-                '-XX:+UseConcMarkSweepGC',
-                '-XX:+CMSIncrementalMode',
-                '-XX:-UseAdaptiveSizePolicy',
-                '-Xmn128M'
+                '-Dfml.ignorePatchDiscrepancies=true',
+                '-Dfml.ignoreInvalidMinecraftCertificates=true'
             ],
         },
         game: {

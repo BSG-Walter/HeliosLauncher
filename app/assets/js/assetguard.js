@@ -241,7 +241,7 @@ class JavaGuard extends EventEmitter {
      * 
      * @returns {Promise.<OpenJDKData>} Promise which resolved to an object containing the JRE download data.
      */
-    static _latestOpenJDK(major = '8'){
+    static _latestOpenJDK(major = '16'){
 
         if(process.platform === 'darwin') {
             return this._latestCorretto(major)
@@ -475,15 +475,15 @@ class JavaGuard extends EventEmitter {
                             break
                         }
                     }
-                } else {
+                } else if(verOb.major >= 16) {
                     // Java 9+
-                    if(Util.mcVersionAtLeast('1.13', this.mcVersion)){
-                        console.log('Java 9+ not yet tested.')
-                        /* meta.version = verOb
+                    if(Util.mcVersionAtLeast('1.18', this.mcVersion)){
+                        //console.log('Java 9+ not yet tested.')
+                         meta.version = verOb
                         ++checksum
                         if(checksum === goal){
                             break
-                        } */
+                        } 
                     }
                 }
                 // Space included so we get only the vendor.
@@ -573,8 +573,10 @@ class JavaGuard extends EventEmitter {
 
             // Keys for Java 1.8 and prior:
             const regKeys = [
-                '\\SOFTWARE\\JavaSoft\\Java Runtime Environment',
-                '\\SOFTWARE\\JavaSoft\\Java Development Kit'
+                //'\\SOFTWARE\\JavaSoft\\Java Runtime Environment',
+                //'\\SOFTWARE\\JavaSoft\\Java Development Kit'
+                 'SOFTWARE\\JavaSoft\\JRE',
+                 'SOFTWARE\\JavaSoft\\JDK'
             ]
 
             let keysDone = 0
@@ -1551,7 +1553,7 @@ class AssetGuard extends EventEmitter {
 
     _enqueueOpenJDK(dataDir){
         return new Promise((resolve, reject) => {
-            JavaGuard._latestOpenJDK('8').then(verData => {
+            JavaGuard._latestOpenJDK('16').then(verData => {
                 if(verData != null){
 
                     dataDir = path.join(dataDir, 'runtime', 'x64')

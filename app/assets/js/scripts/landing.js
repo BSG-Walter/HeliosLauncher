@@ -323,10 +323,17 @@ function asyncSystemScan(mcVersion, launchAfter = true){
                 // If the result is null, no valid Java installation was found.
                 // Show this information to the user.
                 setOverlayContent(
+<<<<<<< Updated upstream
                     'Version no compatible<br>de Java encontrada',
                     'Para unirte al servidor, necesitas una version 64 bits de Java 8. Quieres instalarla automáticamente?',
                     'Instalar automáticamente',
                     'Instalar manualmente'
+=======
+                    'No Compatible<br>Java Installation Found',
+                    'In order to join WesterosCraft, you need a 64-bit installation of Java 16. Would you like us to install a copy?',
+                    'Install Java',
+                    'Install Manually'
+>>>>>>> Stashed changes
                 )
                 setOverlayHandler(() => {
                     setLaunchDetails('Preparando descarga de Java ...')
@@ -338,10 +345,17 @@ function asyncSystemScan(mcVersion, launchAfter = true){
                     $('#overlayContent').fadeOut(250, () => {
                         //$('#overlayDismiss').toggle(false)
                         setOverlayContent(
+<<<<<<< Updated upstream
                             'Se necesita Java<br>para jugar',
                             'Necesitas una version de 64 bits de Java 8 para jugar.<br><br>Por favor visita <a href="https://github.com/dscalzi/HeliosLauncher/wiki/Java-Management#manually-installing-a-valid-version-of-java">Java Management Guide</a> para obtener instrucciones de como instalar java.',
                             'Entiendo',
                             'Atrás'
+=======
+                            'Java is Required<br>to Launch',
+                            'A valid x64 installation of Java 16 is required to launch.<br><br>Please refer to our <a href="https://github.com/dscalzi/HeliosLauncher/wiki/Java-Management#manually-installing-a-valid-version-of-java">Java Management Guide</a> for instructions on how to manually install Java.',
+                            'I Understand',
+                            'Go Back'
+>>>>>>> Stashed changes
                         )
                         setOverlayHandler(() => {
                             toggleLaunchArea(false)
