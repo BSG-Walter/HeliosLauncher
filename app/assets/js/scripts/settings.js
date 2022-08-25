@@ -336,7 +336,7 @@ document.getElementById('settingsAddMojangAccount').onclick = (e) => {
     })
 }
 
-document.getElementById('settingsAddCrackedAccount').onclick = (e) => {
+document.getElementById('settingsAddOfflineAccount').onclick = (e) => {
     cracking = true;
     loginPassword.style.display = 'none';
     loginOptionsElement.style.display = 'none';
@@ -541,8 +541,8 @@ function processLogOut(val, isLastAccount){
                 parent.remove()
             })
         break;
-        case 'cracked':
-            AuthManager.removeCrackedAccount(uuid).then(() => {
+        case 'offline':
+            AuthManager.removeOfflineAccount(uuid).then(() => {
                 if(!isLastAccount && uuid === prevSelAcc.uuid){
                     const selAcc = ConfigManager.getSelectedAccount()
                     refreshAuthAccountSelected(selAcc.uuid)
@@ -644,7 +644,7 @@ function refreshAuthAccountSelected(uuid){
 
 const settingsCurrentMicrosoftAccounts = document.getElementById('settingsCurrentMicrosoftAccounts')
 const settingsCurrentMojangAccounts = document.getElementById('settingsCurrentMojangAccounts')
-const settingsCurrentCrackedAccounts = document.getElementById('settingsCurrentCrackedAccounts')
+const settingsCurrentOfflineAccounts = document.getElementById('settingsCurrentOfflineAccounts')
 
 /**
  * Add auth account elements for each one stored in the authentication database.
@@ -659,7 +659,7 @@ function populateAuthAccounts(){
 
     let microsoftAuthAccountStr = ''
     let mojangAuthAccountStr = ''
-    let crackedAuthAccountStr = ''
+    let offlineAuthAccountStr = ''
 
     authKeys.forEach((val) => {
         const acc = authAccounts[val]
@@ -695,8 +695,8 @@ function populateAuthAccounts(){
             case 'mojang':
                 mojangAuthAccountStr += accHtml
                 break;
-            case 'cracked':
-                crackedAuthAccountStr += accHtml
+            case 'offline':
+                offlineAuthAccountStr += accHtml
                 break;
         }
 
@@ -704,7 +704,7 @@ function populateAuthAccounts(){
 
     settingsCurrentMicrosoftAccounts.innerHTML = microsoftAuthAccountStr
     settingsCurrentMojangAccounts.innerHTML = mojangAuthAccountStr
-    settingsCurrentCrackedAccounts.innerHTML = crackedAuthAccountStr
+    settingsCurrentOfflineAccounts.innerHTML = offlineAuthAccountStr
 }
 
 /**

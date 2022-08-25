@@ -241,7 +241,7 @@ loginButton.addEventListener('click', () => {
     loginLoading(true)
 
     if (cracking){
-        AuthManager.addCrackedAccount(loginUsername.value).then((value) => {
+        AuthManager.addOfflineAccount(loginUsername.value).then((value) => {
             loginCorrecto(value);
         }).catch((displayableError) => {loginIncorrecto(displayableError)})
     }else{

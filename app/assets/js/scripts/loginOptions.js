@@ -1,7 +1,7 @@
 const loginOptionsCancelContainer = document.getElementById('loginOptionCancelContainer')
 const loginOptionMicrosoft = document.getElementById('loginOptionMicrosoft')
 const loginOptionMojang = document.getElementById('loginOptionMojang')
-const loginOptionCracked = document.getElementById('loginOptionCracked')
+const loginOptionOffline = document.getElementById('loginOptionOffline')
 const loginOptionsCancelButton = document.getElementById('loginOptionCancelButton')
 
 let loginOptionsCancellable = false
@@ -42,7 +42,7 @@ loginOptionMojang.onclick = (e) => {
     })
 }
 
-loginOptionCracked.onclick = (e) => {
+loginOptionOffline.onclick = (e) => {
     cracking = true;
     loginPassword.style.display = 'none';
     loginOptionsElement.style.display = 'none';

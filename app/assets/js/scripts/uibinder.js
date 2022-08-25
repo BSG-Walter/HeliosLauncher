@@ -367,8 +367,8 @@ async function validateSelectedAccount(){
                             case 'mojang':
                                 ConfigManager.addMojangAuthAccount(selectedAcc.uuid, selectedAcc.accessToken, selectedAcc.username, selectedAcc.displayName)
                             break;
-                            case 'cracked':
-                                ConfigManager.addCrackedAuthAccount(selectedAcc.uuid, selectedAcc.accessToken, selectedAcc.username, selectedAcc.displayName)
+                            case 'offline':
+                                ConfigManager.addOfflineAuthAccount(selectedAcc.uuid, selectedAcc.accessToken, selectedAcc.username, selectedAcc.displayName)
                             break;
                         }
                         ConfigManager.save()

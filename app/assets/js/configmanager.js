@@ -353,10 +353,10 @@ exports.addMojangAuthAccount = function(uuid, accessToken, username, displayName
     return config.authenticationDatabase[uuid]
 }
 
-exports.addCrackedAuthAccount = function(uuid, accessToken, username, displayName){
+exports.addOfflineAuthAccount = function(uuid, accessToken, username, displayName){
     config.selectedAccount = uuid
     config.authenticationDatabase[uuid] = {
-        type: 'cracked',
+        type: 'offline',
         accessToken,
         username: username.trim(),
         uuid: uuid.trim(),

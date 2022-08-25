@@ -58,10 +58,10 @@ exports.addMojangAccount = async function(username, password) {
     }
 }
 
-exports.addCrackedAccount = async function(username){
-    const ret = ConfigManager.addCrackedAuthAccount(uuidv5(username, uuidv5.DNS), 'Cracked', username, username)
+exports.addOfflineAccount = async function(username){
+    const ret = ConfigManager.addOfflineAuthAccount(uuidv5(username, uuidv5.DNS), 'Offline', username, username)
     if (ConfigManager.getClientToken() == null) {
-        ConfigManager.setClientToken('Cracked')
+        ConfigManager.setClientToken('Offline')
     }
     ConfigManager.save()
     console.log(ret);
@@ -192,7 +192,7 @@ exports.removeMojangAccount = async function(uuid){
     }
 }
 
-exports.removeCrackedAccount = async function(uuid){
+exports.removeOfflineAccount = async function(uuid){
     try {
         ConfigManager.removeAuthAccount(uuid)
         ConfigManager.save()
@@ -328,10 +328,13 @@ async function validateSelectedMicrosoftAccount(){
 exports.validateSelected = async function(){
     const current = ConfigManager.getSelectedAccount()
 
-    if(current.type === 'microsoft') {
-        return await validateSelectedMicrosoftAccount()
-    } else {
-        return await validateSelectedMojangAccount()
+    switch(current.type){
+        case 'microsoft':
+            return await validateSelectedMicrosoftAccount()
+        case 'mojang':
+            return await validateSelectedMojangAccount()
+        case 'offline':
+            return true
     }
     
 }

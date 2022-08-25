@@ -60,7 +60,7 @@ class ProcessBuilder {
         }
 
         logger.log('Launch Arguments:', args)
-
+    
         const child = child_process.spawn(ConfigManager.getJavaExecutable(), args, {
             cwd: this.gameDir,
             detached: ConfigManager.getLaunchDetached()
@@ -468,7 +468,9 @@ class ProcessBuilder {
                             val = this.authUser.accessToken
                             break
                         case 'user_type':
-                            val = this.authUser.type === 'microsoft' ? 'msa' : 'mojang'
+                            val = this.authUser.type
+                            console.log("asddsadas")
+                            console.log(this.authUser.type)
                             break
                         case 'version_type':
                             val = this.versionData.type
@@ -560,13 +562,16 @@ class ProcessBuilder {
                         val = this.versionData.assets
                         break
                     case 'auth_uuid':
-                        val = this.authUser.uuid.trim()
+                        //val = this.authUser.uuid.trim()
+                        val = this.authUser.type !== 'offline' ? this.authUser.uuid.trim() : null;
                         break
                     case 'auth_access_token':
-                        val = this.authUser.accessToken
+                        //val = this.authUser.accessToken
+                        val = this.authUser.type !== 'offline' ? this.authUser.accessToken : null;
                         break
                     case 'user_type':
-                        val = this.authUser.type === 'microsoft' ? 'msa' : 'mojang'
+                        //val = this.authUser.type === 'microsoft' ? 'msa' : 'mojang'
+                        val = this.authUser.type !== 'offline' ? this.authUser.type : null;
                         break
                     case 'user_properties': // 1.8.9 and below.
                         val = '{}'
