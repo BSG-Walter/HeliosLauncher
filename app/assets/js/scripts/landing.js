@@ -5,13 +5,12 @@
 const cp                      = require('child_process')
 const crypto                  = require('crypto')
 const { URL }                 = require('url')
-const { getServerStatus }     = require('helios-core')
+const { MojangRestAPI, getServerStatus }     = require('helios-core/mojang')
 
 // Internal Requirements
 const DiscordWrapper          = require('./assets/js/discordwrapper')
-const Mojang                  = require('./assets/js/mojang')
 const ProcessBuilder          = require('./assets/js/processbuilder')
-const ServerStatus            = require('./assets/js/serverstatus')
+const { RestResponseStatus, isDisplayableError } = require('helios-core/common')
 
 // Launch Elements
 const launch_content          = document.getElementById('launch_content')
@@ -22,7 +21,7 @@ const launch_details_text     = document.getElementById('launch_details_text')
 const server_selection_button = document.getElementById('server_selection_button')
 const user_text               = document.getElementById('user_text')
 
-const loggerLanding = LoggerUtil('%c[Landing]', 'color: #000668; font-weight: bold')
+const loggerLanding = LoggerUtil1('%c[Landing]', 'color: #000668; font-weight: bold')
 
 /* Launch Progress Wrapper Functions */
 
@@ -152,7 +151,7 @@ function updateSelectedServer(serv){
     setLaunchEnabled(serv != null)
 }
 // Real text is set in uibinder.js on distributionIndexDone.
-server_selection_button.innerHTML = '\u2022 Cargando..'
+server_selection_button.innerHTML = '\u2022 Cargando...'
 server_selection_button.onclick = (e) => {
     e.target.blur()
     toggleServerSelection(true)
@@ -166,55 +165,56 @@ const refreshMojangStatuses = async function(){
     let tooltipEssentialHTML = ''
     let tooltipNonEssentialHTML = ''
 
-    try {
-        const statuses = await Mojang.status()
-        greenCount = 0
-        greyCount = 0
+    const response = await MojangRestAPI.status()
+    let statuses
+    if(response.responseStatus === RestResponseStatus.SUCCESS) {
+        statuses = response.data
+    } else {
+        loggerLanding.warn('No se pudo actualizar el estado de los servidores de Mojang')
+        statuses = MojangRestAPI.getDefaultStatuses()
+    }
+    
+    greenCount = 0
+    greyCount = 0
 
-        for(let i=0; i<statuses.length; i++){
-            const service = statuses[i]
+    for(let i=0; i<statuses.length; i++){
+        const service = statuses[i]
 
-            if(service.essential){
-                tooltipEssentialHTML += `<div class="mojangStatusContainer">
-                    <span class="mojangStatusIcon" style="color: ${Mojang.statusToHex(service.status)};">&#8226;</span>
-                    <span class="mojangStatusName">${service.name}</span>
-                </div>`
-            } else {
-                tooltipNonEssentialHTML += `<div class="mojangStatusContainer">
-                    <span class="mojangStatusIcon" style="color: ${Mojang.statusToHex(service.status)};">&#8226;</span>
-                    <span class="mojangStatusName">${service.name}</span>
-                </div>`
-            }
-
-            if(service.status === 'yellow' && status !== 'red'){
-                status = 'yellow'
-            } else if(service.status === 'red'){
-                status = 'red'
-            } else {
-                if(service.status === 'grey'){
-                    ++greyCount
-                }
-                ++greenCount
-            }
-
+        if(service.essential){
+            tooltipEssentialHTML += `<div class="mojangStatusContainer">
+                <span class="mojangStatusIcon" style="color: ${MojangRestAPI.statusToHex(service.status)};">&#8226;</span>
+                <span class="mojangStatusName">${service.name}</span>
+            </div>`
+        } else {
+            tooltipNonEssentialHTML += `<div class="mojangStatusContainer">
+                <span class="mojangStatusIcon" style="color: ${MojangRestAPI.statusToHex(service.status)};">&#8226;</span>
+                <span class="mojangStatusName">${service.name}</span>
+            </div>`
         }
 
-        if(greenCount === statuses.length){
-            if(greyCount === statuses.length){
-                status = 'grey'
-            } else {
-                status = 'green'
+        if(service.status === 'yellow' && status !== 'red'){
+            status = 'yellow'
+        } else if(service.status === 'red'){
+            status = 'red'
+        } else {
+            if(service.status === 'grey'){
+                ++greyCount
             }
+            ++greenCount
         }
+    }
 
-    } catch (err) {
-        loggerLanding.warn('No se pudo actualizar el estado de los servidores de Mojang.')
-        loggerLanding.debug(err)
+    if(greenCount === statuses.length){
+        if(greyCount === statuses.length){
+            status = 'grey'
+        } else {
+            status = 'green'
+        }
     }
     
     document.getElementById('mojangStatusEssentialContainer').innerHTML = tooltipEssentialHTML
     document.getElementById('mojangStatusNonEssentialContainer').innerHTML = tooltipNonEssentialHTML
-    document.getElementById('mojang_status_icon').style.color = Mojang.statusToHex(status)
+    document.getElementById('mojang_status_icon').style.color = MojangRestAPI.statusToHex(status)
 }
 
 const refreshServerStatus = async function(fade = false){
@@ -288,11 +288,11 @@ let extractListener
  */
 function asyncSystemScan(mcVersion, launchAfter = true){
 
-    setLaunchDetails('Espere por favor ...')
+    setLaunchDetails('Espere por favor...')
     toggleLaunchArea(true)
     setLaunchPercentage(0, 100)
 
-    const loggerSysAEx = LoggerUtil('%c[SysAEx]', 'color: #353232; font-weight: bold')
+    const loggerSysAEx = LoggerUtil1('%c[SysAEx]', 'color: #353232; font-weight: bold')
 
     const forkEnv = JSON.parse(JSON.stringify(process.env))
     forkEnv.CONFIG_DIRECT_PATH = ConfigManager.getLauncherDirectory()
@@ -329,7 +329,7 @@ function asyncSystemScan(mcVersion, launchAfter = true){
                     'Instalar manualmente'
                 )
                 setOverlayHandler(() => {
-                    setLaunchDetails('Preparando descarga de Java ...')
+                    setLaunchDetails('Preparando descarga de Java...')
                     sysAEx.send({task: 'changeContext', class: 'AssetGuard', args: [ConfigManager.getCommonDirectory(),ConfigManager.getJavaExecutable()]})
                     sysAEx.send({task: 'execute', function: '_enqueueOpenJDK', argsArr: [ConfigManager.getDataDirectory()]})
                     toggleOverlay(false)
@@ -339,7 +339,7 @@ function asyncSystemScan(mcVersion, launchAfter = true){
                         //$('#overlayDismiss').toggle(false)
                         setOverlayContent(
                             'Se necesita Java<br>para jugar',
-                            'Necesitas una version de 64 bits de Java 8 para jugar.<br><br>Por favor visita <a href="https://github.com/dscalzi/HeliosLauncher/wiki/Java-Management#manually-installing-a-valid-version-of-java">Java Management Guide</a> para obtener instrucciones de como instalar java.',
+                            'Necesitas una version de 64 bits de Java 8 para jugar.<br><br>Por favor visita <a href="https://github.com/dscalzi/milauncher/wiki/Java-Management#manually-installing-a-valid-version-of-java">Java Management Guide</a> para obtener instrucciones de como instalar java.',
                             'Entiendo',
                             'Atrás'
                         )
@@ -376,7 +376,7 @@ function asyncSystemScan(mcVersion, launchAfter = true){
             if(m.result === true){
 
                 // Oracle JRE enqueued successfully, begin download.
-                setLaunchDetails('Descargando Java ...')
+                setLaunchDetails('Descargando Java...')
                 sysAEx.send({task: 'execute', function: 'processDlQueues', argsArr: [[{id:'java', limit:1}]]})
 
             } else {
@@ -385,7 +385,7 @@ function asyncSystemScan(mcVersion, launchAfter = true){
                 // User will have to follow the guide to install Java.
                 setOverlayContent(
                     'Error inesperado:<br>Descarga de Java fallida',
-                    'Desafortunadamente encontramos un error mientras se instalaba Java. Necesitaras instalarlo manualmente. Por favor visita nuestra <a href="https://github.com/dscalzi/HeliosLauncher/wiki">Guía de problemas</a> para mas detalles e instrucciones.',
+                    'Desafortunadamente encontramos un error mientras se instalaba Java. Necesitaras instalarlo manualmente. Por favor visita nuestra <a href="https://github.com/dscalzi/milauncher/wiki">Guía de problemas</a> para mas detalles e instrucciones.',
                     'Entiendo'
                 )
                 setOverlayHandler(() => {
@@ -414,7 +414,7 @@ function asyncSystemScan(mcVersion, launchAfter = true){
                     remote.getCurrentWindow().setProgressBar(2)
 
                     // Wait for extration to complete.
-                    const eLStr = 'Extracting'
+                    const eLStr = 'Extrayendo'
                     let dotStr = ''
                     setLaunchDetails(eLStr)
                     extractListener = setInterval(() => {
@@ -456,7 +456,7 @@ function asyncSystemScan(mcVersion, launchAfter = true){
     })
 
     // Begin system Java scan.
-    setLaunchDetails('Checking system info..')
+    setLaunchDetails('Comprobando información del sistema...')
     sysAEx.send({task: 'execute', function: 'validateJava', argsArr: [ConfigManager.getDataDirectory()]})
 
 }
@@ -490,12 +490,12 @@ function dlAsync(login = true){
         }
     }
 
-    setLaunchDetails('Por favor espere ...')
+    setLaunchDetails('Espere por favor...')
     toggleLaunchArea(true)
     setLaunchPercentage(0, 100)
 
-    const loggerAEx = LoggerUtil('%c[AEx]', 'color: #353232; font-weight: bold')
-    const loggerLaunchSuite = LoggerUtil('%c[LaunchSuite]', 'color: #000668; font-weight: bold')
+    const loggerAEx = LoggerUtil1('%c[AEx]', 'color: #353232; font-weight: bold')
+    const loggerLaunchSuite = LoggerUtil1('%c[LaunchSuite]', 'color: #000668; font-weight: bold')
 
     const forkEnv = JSON.parse(JSON.stringify(process.env))
     forkEnv.CONFIG_DIRECT_PATH = ConfigManager.getLauncherDirectory()
@@ -610,12 +610,12 @@ function dlAsync(login = true){
                     
                     if(m.error.code === 'ENOENT'){
                         showLaunchFailure(
-                            'Download Error',
+                            'Error de descarga',
                             'No se pudo conectar al servidor de archivos. Asegúrate de estar conectado a internet e inténtalo mas tarde.'
                         )
                     } else {
                         showLaunchFailure(
-                            'Download Error',
+                            'Error de descarga',
                             'Abre la consola (CTRL + Shift + i) para mas detalles. Por favor intenta de nuevo.'
                         )
                     }
@@ -692,7 +692,7 @@ function dlAsync(login = true){
                     data = data.trim()
                     if(data.indexOf('Could not find or load main class net.minecraft.launchwrapper.Launch') > -1){
                         loggerLaunchSuite.error('Game launch failed, LaunchWrapper was not downloaded properly.')
-                        showLaunchFailure('Error During Launch', 'The main file, LaunchWrapper, failed to download properly. As a result, the game cannot launch.<br><br>To fix this issue, temporarily turn off your antivirus software and launch the game again.<br><br>If you have time, please <a href="https://github.com/dscalzi/HeliosLauncher/issues">submit an issue</a> and let us know what antivirus software you use. We\'ll contact them and try to straighten things out.')
+                        showLaunchFailure('Error During Launch', 'The main file, LaunchWrapper, failed to download properly. As a result, the game cannot launch.<br><br>To fix this issue, temporarily turn off your antivirus software and launch the game again.<br><br>If you have time, please <a href="https://github.com/dscalzi/milauncher/issues">submit an issue</a> and let us know what antivirus software you use. We\'ll contact them and try to straighten things out.')
                     }
                 }
 
@@ -863,7 +863,7 @@ let newsLoadingListener = null
  */
 function setNewsLoading(val){
     if(val){
-        const nLStr = 'Buscando noticias...'
+        const nLStr = 'Buscando noticias'
         let dotStr = '..'
         nELoadSpan.innerHTML = nLStr + dotStr
         newsLoadingListener = setInterval(() => {

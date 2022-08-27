@@ -16,13 +16,6 @@ const ConfigManager = require('./configmanager')
 const DistroManager = require('./distromanager')
 const isDev         = require('./isdev')
 
-// Constants
-// const PLATFORM_MAP = {
-//     win32: '-windows-x64.tar.gz',
-//     darwin: '-macosx-x64.tar.gz',
-//     linux: '-linux-x64.tar.gz'
-// }
-
 // Classes
 
 /** Class representing a base asset. */
@@ -234,7 +227,7 @@ class JavaGuard extends EventEmitter {
      * Fetch the last open JDK binary.
      * 
      * HOTFIX: Uses Corretto 8 for macOS.
-     * See: https://github.com/dscalzi/HeliosLauncher/issues/70
+     * See: https://github.com/dscalzi/milauncher/issues/70
      * See: https://github.com/AdoptOpenJDK/openjdk-support/issues/101
      * 
      * @param {string} major The major version of Java to fetch.

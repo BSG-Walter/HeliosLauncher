@@ -4,5 +4,4 @@
 /target/
 /logs/
 /dist/
-app/assets/js/distromanager.js
-app/assets/js/distromanager.js
+debug.log
