@@ -1,13 +1,13 @@
 {
-  "name": "milauncher",
+  "name": "fuflauncher",
   "version": "1.9.0",
-  "productName": "Mi Launcher",
+  "productName": "FUF Launcher",
   "description": "Modded Minecraft Launcher",
   "author": "Daniel Scalzi (https://github.com/dscalzi/)",
   "license": "UNLICENSED",
-  "homepage": "https://github.com/dscalzi/milauncher",
+  "homepage": "https://github.com/dscalzi/fuflauncher",
   "bugs": {
-    "url": "https://github.com/dscalzi/milauncher/issues"
+    "url": "https://github.com/dscalzi/fuflauncher/issues"
   },
   "private": true,
   "main": "index.js",
@@ -49,6 +49,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dscalzi/milauncher.git"
+    "url": "git+https://github.com/dscalzi/fuflauncher.git"
   }
 }

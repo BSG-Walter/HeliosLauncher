@@ -339,7 +339,7 @@ function asyncSystemScan(mcVersion, launchAfter = true){
                         //$('#overlayDismiss').toggle(false)
                         setOverlayContent(
                             'Se necesita Java<br>para jugar',
-                            'Necesitas una version de 64 bits de Java 8 para jugar.<br><br>Por favor visita <a href="https://github.com/dscalzi/milauncher/wiki/Java-Management#manually-installing-a-valid-version-of-java">Java Management Guide</a> para obtener instrucciones de como instalar java.',
+                            'Necesitas una version de 64 bits de Java 8 para jugar.<br><br>Por favor visita <a href="https://github.com/dscalzi/fuflauncher/wiki/Java-Management#manually-installing-a-valid-version-of-java">Java Management Guide</a> para obtener instrucciones de como instalar java.',
                             'Entiendo',
                             'Atrás'
                         )
@@ -385,7 +385,7 @@ function asyncSystemScan(mcVersion, launchAfter = true){
                 // User will have to follow the guide to install Java.
                 setOverlayContent(
                     'Error inesperado:<br>Descarga de Java fallida',
-                    'Desafortunadamente encontramos un error mientras se instalaba Java. Necesitaras instalarlo manualmente. Por favor visita nuestra <a href="https://github.com/dscalzi/milauncher/wiki">Guía de problemas</a> para mas detalles e instrucciones.',
+                    'Desafortunadamente encontramos un error mientras se instalaba Java. Necesitaras instalarlo manualmente. Por favor visita nuestra <a href="https://github.com/dscalzi/fuflauncher/wiki">Guía de problemas</a> para mas detalles e instrucciones.',
                     'Entiendo'
                 )
                 setOverlayHandler(() => {
@@ -692,7 +692,7 @@ function dlAsync(login = true){
                     data = data.trim()
                     if(data.indexOf('Could not find or load main class net.minecraft.launchwrapper.Launch') > -1){
                         loggerLaunchSuite.error('Game launch failed, LaunchWrapper was not downloaded properly.')
-                        showLaunchFailure('Error During Launch', 'The main file, LaunchWrapper, failed to download properly. As a result, the game cannot launch.<br><br>To fix this issue, temporarily turn off your antivirus software and launch the game again.<br><br>If you have time, please <a href="https://github.com/dscalzi/milauncher/issues">submit an issue</a> and let us know what antivirus software you use. We\'ll contact them and try to straighten things out.')
+                        showLaunchFailure('Error During Launch', 'The main file, LaunchWrapper, failed to download properly. As a result, the game cannot launch.<br><br>To fix this issue, temporarily turn off your antivirus software and launch the game again.<br><br>If you have time, please <a href="https://github.com/dscalzi/fuflauncher/issues">submit an issue</a> and let us know what antivirus software you use. We\'ll contact them and try to straighten things out.')
                     }
                 }
 

@@ -1,6 +1,6 @@
 # Microsoft Authentication
 
-Authenticating with Microsoft is fully supported by Mi Launcher.
+Authenticating with Microsoft is fully supported by FUF Launcher.
 
 ## Acquiring an Azure Client ID
 
@@ -24,7 +24,7 @@ Authenticating with Microsoft is fully supported by Mi Launcher.
 
 Reference: https://docs.microsoft.com/en-us/azure/active-directory/develop/quickstart-register-app
 
-## Adding the Azure Client ID to Mi Launcher.
+## Adding the Azure Client ID to FUF Launcher.
 
 In `app/assets/js/ipcconstants.js` you'll find **`AZURE_CLIENT_ID`**. Set it to your application's id.
 
