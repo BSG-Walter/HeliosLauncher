@@ -57,6 +57,9 @@ class ProcessBuilder {
         if(Util.mcVersionAtLeast('1.13', this.server.getMinecraftVersion())){
             //args = args.concat(this.constructModArguments(modObj.fMods))
             args = args.concat(this.constructModList(modObj.fMods))
+            if (this.authUser.type == 'offline'){
+                args = ['-Dminecraft.api.auth.host=https://nope.invalid', '-Dminecraft.api.account.host=https://nope.invalid', '-Dminecraft.api.session.host=https://nope.invalid', '-Dminecraft.api.services.host=https://nope.invalid'].concat(args)
+            }
         }
 
         logger.log('Launch Arguments:', args)

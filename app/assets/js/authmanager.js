@@ -59,9 +59,9 @@ exports.addMojangAccount = async function(username, password) {
 }
 
 exports.addOfflineAccount = async function(username){
-    const ret = ConfigManager.addOfflineAuthAccount(uuidv5(username, uuidv5.DNS), 'Offline', username, username)
+    const ret = ConfigManager.addOfflineAuthAccount(uuidv5(username, uuidv5.DNS), 'offline', username, username)
     if (ConfigManager.getClientToken() == null) {
-        ConfigManager.setClientToken('Offline')
+        ConfigManager.setClientToken('offline')
     }
     ConfigManager.save()
     console.log(ret);
