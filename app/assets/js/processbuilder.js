@@ -57,9 +57,6 @@ class ProcessBuilder {
         if(Util.mcVersionAtLeast('1.13', this.server.getMinecraftVersion())){
             //args = args.concat(this.constructModArguments(modObj.fMods))
             args = args.concat(this.constructModList(modObj.fMods))
-            if (this.authUser.type == 'offline'){
-                args = ['-Dminecraft.api.auth.host=https://nope.invalid', '-Dminecraft.api.account.host=https://nope.invalid', '-Dminecraft.api.session.host=https://nope.invalid', '-Dminecraft.api.services.host=https://nope.invalid'].concat(args)
-            }
         }
 
         logger.log('Launch Arguments:', args)
@@ -383,10 +380,16 @@ class ProcessBuilder {
         //args.push('-Dlog4j.configurationFile=D:\\WesterosCraft\\game\\common\\assets\\log_configs\\client-1.12.xml')
 
         // Java Arguments
+
+        if (this.authUser.type == 'offline'){
+            args.push('-Dminecraft.api.auth.host=https://nope.invalid', '-Dminecraft.api.account.host=https://nope.invalid', '-Dminecraft.api.session.host=https://nope.invalid', '-Dminecraft.api.services.host=https://nope.invalid')
+        }
+
         if(process.platform === 'darwin'){
             args.push('-Xdock:name=milauncher')
             args.push('-Xdock:icon=' + path.join(__dirname, '..', 'images', 'minecraft.icns'))
         }
+
         args.push('-Xmx' + ConfigManager.getMaxRAM())
         args.push('-Xms' + ConfigManager.getMinRAM())
         args = args.concat(ConfigManager.getJVMOptions())
@@ -472,7 +475,6 @@ class ProcessBuilder {
                             break
                         case 'user_type':
                             val = this.authUser.type
-                            console.log("asddsadas")
                             console.log(this.authUser.type)
                             break
                         case 'version_type':
