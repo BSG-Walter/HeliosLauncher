@@ -3,12 +3,33 @@
  */
 // Requirements
 const { URL }                 = require('url')
-const { MojangRestAPI, getServerStatus }     = require('helios-core/mojang')
+const {
+    MojangRestAPI,
+    getServerStatus
+}                             = require('helios-core/mojang')
+const {
+    RestResponseStatus,
+    isDisplayableError,
+    validateLocalFile
+}                             = require('helios-core/common')
+const {
+    FullRepair,
+    DistributionIndexProcessor,
+    MojangIndexProcessor,
+    downloadFile
+}                             = require('helios-core/dl')
+const {
+    validateSelectedJvm,
+    ensureJavaDirIsRoot,
+    javaExecFromRoot,
+    discoverBestJvmInstallation,
+    latestOpenJDK,
+    extractJdk
+}                             = require('helios-core/java')
 
 // Internal Requirements
 const DiscordWrapper          = require('./assets/js/discordwrapper')
 const ProcessBuilder          = require('./assets/js/processbuilder')
-const { RestResponseStatus, isDisplayableError } = require('helios-core/common')
 
 // Launch Elements
 const launch_content          = document.getElementById('launch_content')
@@ -19,7 +40,7 @@ const launch_details_text     = document.getElementById('launch_details_text')
 const server_selection_button = document.getElementById('server_selection_button')
 const user_text               = document.getElementById('user_text')
 
-const loggerLanding = LoggerUtil1('%c[Landing]', 'color: #000668; font-weight: bold')
+const loggerLanding = LoggerUtil.getLogger('Landing')
 
 /* Launch Progress Wrapper Functions */
 

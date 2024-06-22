@@ -303,6 +303,24 @@ exports.removeMojangAccount = async function(uuid){
     }
 }
 
+/**
+ * Remove a Microsoft account. It is expected that the caller will invoke the OAuth logout
+ * through the ipc renderer.
+ * 
+ * @param {string} uuid The UUID of the account to be removed.
+ * @returns {Promise.<void>} Promise which resolves to void when the action is complete.
+ */
+exports.removeMicrosoftAccount = async function(uuid){
+    try {
+        ConfigManager.removeAuthAccount(uuid)
+        ConfigManager.save()
+        return Promise.resolve()
+    } catch (err){
+        log.error('Error while removing account', err)
+        return Promise.reject(err)
+    }
+}
+
 exports.removeOfflineAccount = async function(uuid){
     try {
         ConfigManager.removeAuthAccount(uuid)

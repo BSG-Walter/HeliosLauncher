@@ -387,6 +387,7 @@ body, button {
     transition: filter 0.25s ease;
     background: rgba(0, 0, 0, 0.50);
 }
+
 /* Login cancel button styles. */
 #loginCancelContainer {
     position: absolute;
