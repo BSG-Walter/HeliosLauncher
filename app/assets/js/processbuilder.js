@@ -789,7 +789,7 @@ class ProcessBuilder {
      * Recursively resolve the path of each library required by this module.
      * 
      * @param {Object} mdl A module object from the server distro index.
-     * @returns {Array.<string>} An array containing the paths of each library this module requires.
+     * @returns {{[id: string]: string}} An object containing the paths of each library this module requires.
      */
     _resolveModuleLibraries(mdl){
         if(!mdl.hasSubModules()){
