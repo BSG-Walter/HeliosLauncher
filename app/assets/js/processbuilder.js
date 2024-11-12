@@ -765,9 +765,7 @@ class ProcessBuilder {
                 libs[mdl.getVersionlessID()] = mdl.getArtifact().getPath()
                 if(mdl.hasSubModules()){
                     const res = this._resolveModuleLibraries(mdl)
-                    if(res.length > 0){
-                        libs = {...libs, ...res}
-                    }
+                    libs = {...libs, ...res}
                 }
             }
         }
@@ -776,9 +774,7 @@ class ProcessBuilder {
         for(let i=0; i<mods.length; i++){
             if(mods.sub_modules != null){
                 const res = this._resolveModuleLibraries(mods[i])
-                if(res.length > 0){
-                    libs = {...libs, ...res}
-                }
+                libs = {...libs, ...res}
             }
         }
 
@@ -789,24 +785,25 @@ class ProcessBuilder {
      * Recursively resolve the path of each library required by this module.
      * 
      * @param {Object} mdl A module object from the server distro index.
-     * @returns {{[id: string]: string}} An object containing the paths of each library this module requires.
+     * @returns {{[id: string]: string}} An object containing the paths of each library this server requires.
      */
     _resolveModuleLibraries(mdl){
-        if(!mdl.hasSubModules()){
-            return []
+        if(!mdl.subModules.length > 0){
+            return {}
         }
-        let libs = []
-        for(let sm of mdl.getSubModules()){
-            if(sm.getType() === DistroManager.Types.Library){
-                libs.push(sm.getArtifact().getPath())
+        let libs = {}
+        for(let sm of mdl.subModules){
+            if(sm.rawModule.type === Type.Library){
+
+                if(sm.rawModule.classpath ?? true) {
+                    libs[sm.getVersionlessMavenIdentifier()] = sm.getPath()
+                }
             }
             // If this module has submodules, we need to resolve the libraries for those.
             // To avoid unnecessary recursive calls, base case is checked here.
             if(mdl.hasSubModules()){
                 const res = this._resolveModuleLibraries(sm)
-                if(res.length > 0){
-                    libs = libs.concat(res)
-                }
+                libs = {...libs, ...res}
             }
         }
         return libs
