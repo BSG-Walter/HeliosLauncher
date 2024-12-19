@@ -23,8 +23,6 @@ const loginDisclaimer       = document.getElementById('loginDisclaimer')
 // Control variables.
 let lu = false, lp = false
 
-const loggerLogin = LoggerUtil1('%c[Login]', 'color: #000668; font-weight: bold')
-
 
 /**
  * Show a login error.

@@ -1,15 +1,15 @@
 const fs   = require('fs-extra')
+const { LoggerUtil } = require('helios-core')
 const os   = require('os')
 const path = require('path')
 
-const logger = require('./loggerutil')('%c[ConfigManager]', 'color: #a02d2a; font-weight: bold')
+const logger = LoggerUtil.getLogger('ConfigManager')
 
 const sysRoot = process.env.APPDATA || (process.platform == 'darwin' ? process.env.HOME + '/Library/Application Support' : process.env.HOME)
 // TODO change
 const dataPath = path.join(sysRoot, '.milauncher')
 
-// Forked processes do not have access to electron, so we have this workaround.
-const launcherDir = process.env.CONFIG_DIRECT_PATH || require('@electron/remote').app.getPath('userData')
+const launcherDir = require('@electron/remote').app.getPath('userData')
 
 /**
  * Retrieve the absolute path of the launcher directory.
@@ -43,24 +43,30 @@ const configPath = path.join(exports.getLauncherDirectory(), 'config.json')
 const configPathLEGACY = path.join(dataPath, 'config.json')
 const firstLaunch = !fs.existsSync(configPath) && !fs.existsSync(configPathLEGACY)
 
-exports.getAbsoluteMinRAM = function(){
-    const mem = os.totalmem()
-    return mem >= 6000000000 ? 3 : 2
+exports.getAbsoluteMinRAM = function(ram){
+    if(ram?.minimum != null) {
+        return ram.minimum/1024
+    } else {
+        // Legacy behavior
+        const mem = os.totalmem()
+        return mem >= (6*1073741824) ? 3 : 2
+    }
 }
 
-exports.getAbsoluteMaxRAM = function(){
+exports.getAbsoluteMaxRAM = function(ram){
     const mem = os.totalmem()
-    const gT16 = mem-16000000000
-    return Math.floor((mem-1000000000-(gT16 > 0 ? (Number.parseInt(gT16/8) + 16000000000/4) : mem/4))/1000000000)
+    const gT16 = mem-(16*1073741824)
+    return Math.floor((mem-(gT16 > 0 ? (Number.parseInt(gT16/8) + (16*1073741824)/4) : mem/4))/1073741824)
 }
 
-function resolveMaxRAM(){
-    const mem = os.totalmem()
-    return mem >= 8000000000 ? '4G' : (mem >= 6000000000 ? '3G' : '2G')
-}
-
-function resolveMinRAM(){
-    return resolveMaxRAM()
+function resolveSelectedRAM(ram) {
+    if(ram?.recommended != null) {
+        return `${ram.recommended}M`
+    } else {
+        // Legacy behavior
+        const mem = os.totalmem()
+        return mem >= (8*1073741824) ? '4G' : (mem >= (6*1073741824) ? '3G' : '2G')
+    }
 }
 
 /**
@@ -71,17 +77,6 @@ function resolveMinRAM(){
  */
 const DEFAULT_CONFIG = {
     settings: {
-        java: {
-            minRAM: resolveMinRAM(),
-            maxRAM: resolveMaxRAM(), // Dynamic
-            executable: null,
-            jvmOptions: [
-                '-XX:+UseConcMarkSweepGC',
-                '-XX:+CMSIncrementalMode',
-                '-XX:-UseAdaptiveSizePolicy',
-                '-Xmn128M'
-            ],
-        },
         game: {
             resWidth: 1280,
             resHeight: 720,
@@ -103,7 +98,8 @@ const DEFAULT_CONFIG = {
     selectedServer: null, // Resolved
     selectedAccount: null,
     authenticationDatabase: {},
-    modConfigurations: []
+    modConfigurations: [],
+    javaConfig: {}
 }
 
 let config = null
@@ -144,8 +140,8 @@ exports.load = function(){
             doValidate = true
         } catch (err){
             logger.error(err)
-            logger.log('Configuration file contains malformed JSON or is corrupt.')
-            logger.log('Generating a new configuration file.')
+            logger.info('Configuration file contains malformed JSON or is corrupt.')
+            logger.info('Generating a new configuration file.')
             fs.ensureDirSync(path.join(configPath, '..'))
             config = DEFAULT_CONFIG
             exports.save()
@@ -155,7 +151,7 @@ exports.load = function(){
             exports.save()
         }
     }
-    logger.log('Successfully Loaded')
+    logger.info('Successfully Loaded')
 }
 
 /**
@@ -177,7 +173,7 @@ function validateKeySet(srcObj, destObj){
     if(srcObj == null){
         srcObj = {}
     }
-    const validationBlacklist = ['authenticationDatabase']
+    const validationBlacklist = ['authenticationDatabase', 'javaConfig']
     const keys = Object.keys(srcObj)
     for(let i=0; i<keys.length; i++){
         if(typeof destObj[keys[i]] === 'undefined'){
@@ -418,6 +414,58 @@ exports.addMicrosoftAuthAccount = function(uuid, accessToken, name, mcExpires, m
 }
 
 /**
+ * Update the tokens of an authenticated microsoft account.
+ * 
+ * @param {string} uuid The uuid of the authenticated account.
+ * @param {string} accessToken The new Access Token.
+ * @param {string} msAccessToken The new Microsoft Access Token
+ * @param {string} msRefreshToken The new Microsoft Refresh Token
+ * @param {date} msExpires The date when the microsoft access token expires
+ * @param {date} mcExpires The date when the mojang access token expires
+ * 
+ * @returns {Object} The authenticated account object created by this action.
+ */
+exports.updateMicrosoftAuthAccount = function(uuid, accessToken, msAccessToken, msRefreshToken, msExpires, mcExpires) {
+    config.authenticationDatabase[uuid].accessToken = accessToken
+    config.authenticationDatabase[uuid].expiresAt = mcExpires
+    config.authenticationDatabase[uuid].microsoft.access_token = msAccessToken
+    config.authenticationDatabase[uuid].microsoft.refresh_token = msRefreshToken
+    config.authenticationDatabase[uuid].microsoft.expires_at = msExpires
+    return config.authenticationDatabase[uuid]
+}
+
+/**
+ * Adds an authenticated microsoft account to the database to be stored.
+ * 
+ * @param {string} uuid The uuid of the authenticated account.
+ * @param {string} accessToken The accessToken of the authenticated account.
+ * @param {string} name The in game name of the authenticated account.
+ * @param {date} mcExpires The date when the mojang access token expires
+ * @param {string} msAccessToken The microsoft access token
+ * @param {string} msRefreshToken The microsoft refresh token
+ * @param {date} msExpires The date when the microsoft access token expires
+ * 
+ * @returns {Object} The authenticated account object created by this action.
+ */
+exports.addMicrosoftAuthAccount = function(uuid, accessToken, name, mcExpires, msAccessToken, msRefreshToken, msExpires) {
+    config.selectedAccount = uuid
+    config.authenticationDatabase[uuid] = {
+        type: 'microsoft',
+        accessToken,
+        username: name.trim(),
+        uuid: uuid.trim(),
+        displayName: name.trim(),
+        expiresAt: mcExpires,
+        microsoft: {
+            access_token: msAccessToken,
+            refresh_token: msRefreshToken,
+            expires_at: msExpires
+        }
+    }
+    return config.authenticationDatabase[uuid]
+}
+
+/**
  * Remove an authenticated account from the database. If the account
  * was also the selected account, a new one will be selected. If there
  * are no accounts, the selected account will be null.
@@ -523,16 +571,66 @@ exports.setModConfiguration = function(serverid, configuration){
 
 // Java Settings
 
+function defaultJavaConfig(effectiveJavaOptions, ram) {
+    if(effectiveJavaOptions.suggestedMajor > 8) {
+        return defaultJavaConfig17(ram)
+    } else {
+        return defaultJavaConfig8(ram)
+    }
+}
+
+function defaultJavaConfig8(ram) {
+    return {
+        minRAM: resolveSelectedRAM(ram),
+        maxRAM: resolveSelectedRAM(ram),
+        executable: null,
+        jvmOptions: [
+            '-XX:+UseConcMarkSweepGC',
+            '-XX:+CMSIncrementalMode',
+            '-XX:-UseAdaptiveSizePolicy',
+            '-Xmn128M'
+        ],
+    }
+}
+
+function defaultJavaConfig17(ram) {
+    return {
+        minRAM: resolveSelectedRAM(ram),
+        maxRAM: resolveSelectedRAM(ram),
+        executable: null,
+        jvmOptions: [
+            '-XX:+UnlockExperimentalVMOptions',
+            '-XX:+UseG1GC',
+            '-XX:G1NewSizePercent=20',
+            '-XX:G1ReservePercent=20',
+            '-XX:MaxGCPauseMillis=50',
+            '-XX:G1HeapRegionSize=32M'
+        ],
+    }
+}
+
+/**
+ * Ensure a java config property is set for the given server.
+ * 
+ * @param {string} serverid The server id.
+ * @param {*} mcVersion The minecraft version of the server.
+ */
+exports.ensureJavaConfig = function(serverid, effectiveJavaOptions, ram) {
+    if(!Object.prototype.hasOwnProperty.call(config.javaConfig, serverid)) {
+        config.javaConfig[serverid] = defaultJavaConfig(effectiveJavaOptions, ram)
+    }
+}
+
 /**
  * Retrieve the minimum amount of memory for JVM initialization. This value
  * contains the units of memory. For example, '5G' = 5 GigaBytes, '1024M' = 
  * 1024 MegaBytes, etc.
  * 
- * @param {boolean} def Optional. If true, the default value will be returned.
+ * @param {string} serverid The server id.
  * @returns {string} The minimum amount of memory for JVM initialization.
  */
-exports.getMinRAM = function(def = false){
-    return !def ? config.settings.java.minRAM : DEFAULT_CONFIG.settings.java.minRAM
+exports.getMinRAM = function(serverid){
+    return config.javaConfig[serverid].minRAM
 }
 
 /**
@@ -540,10 +638,11 @@ exports.getMinRAM = function(def = false){
  * contain the units of memory. For example, '5G' = 5 GigaBytes, '1024M' = 
  * 1024 MegaBytes, etc.
  * 
+ * @param {string} serverid The server id.
  * @param {string} minRAM The new minimum amount of memory for JVM initialization.
  */
-exports.setMinRAM = function(minRAM){
-    config.settings.java.minRAM = minRAM
+exports.setMinRAM = function(serverid, minRAM){
+    config.javaConfig[serverid].minRAM = minRAM
 }
 
 /**
@@ -551,11 +650,11 @@ exports.setMinRAM = function(minRAM){
  * contains the units of memory. For example, '5G' = 5 GigaBytes, '1024M' = 
  * 1024 MegaBytes, etc.
  * 
- * @param {boolean} def Optional. If true, the default value will be returned.
+ * @param {string} serverid The server id.
  * @returns {string} The maximum amount of memory for JVM initialization.
  */
-exports.getMaxRAM = function(def = false){
-    return !def ? config.settings.java.maxRAM : resolveMaxRAM()
+exports.getMaxRAM = function(serverid){
+    return config.javaConfig[serverid].maxRAM
 }
 
 /**
@@ -563,10 +662,11 @@ exports.getMaxRAM = function(def = false){
  * contain the units of memory. For example, '5G' = 5 GigaBytes, '1024M' = 
  * 1024 MegaBytes, etc.
  * 
+ * @param {string} serverid The server id.
  * @param {string} maxRAM The new maximum amount of memory for JVM initialization.
  */
-exports.setMaxRAM = function(maxRAM){
-    config.settings.java.maxRAM = maxRAM
+exports.setMaxRAM = function(serverid, maxRAM){
+    config.javaConfig[serverid].maxRAM = maxRAM
 }
 
 /**
@@ -574,19 +674,21 @@ exports.setMaxRAM = function(maxRAM){
  * 
  * This is a resolved configuration value and defaults to null until externally assigned.
  * 
+ * @param {string} serverid The server id.
  * @returns {string} The path of the Java Executable.
  */
-exports.getJavaExecutable = function(){
-    return config.settings.java.executable
+exports.getJavaExecutable = function(serverid){
+    return config.javaConfig[serverid].executable
 }
 
 /**
  * Set the path of the Java Executable.
  * 
+ * @param {string} serverid The server id.
  * @param {string} executable The new path of the Java Executable.
  */
-exports.setJavaExecutable = function(executable){
-    config.settings.java.executable = executable
+exports.setJavaExecutable = function(serverid, executable){
+    config.javaConfig[serverid].executable = executable
 }
 
 /**
@@ -594,11 +696,11 @@ exports.setJavaExecutable = function(executable){
  * such as memory allocation, will be dynamically resolved and will not be included
  * in this value.
  * 
- * @param {boolean} def Optional. If true, the default value will be returned.
+ * @param {string} serverid The server id.
  * @returns {Array.<string>} An array of the additional arguments for JVM initialization.
  */
-exports.getJVMOptions = function(def = false){
-    return !def ? config.settings.java.jvmOptions : DEFAULT_CONFIG.settings.java.jvmOptions
+exports.getJVMOptions = function(serverid){
+    return config.javaConfig[serverid].jvmOptions
 }
 
 /**
@@ -606,11 +708,12 @@ exports.getJVMOptions = function(def = false){
  * such as memory allocation, will be dynamically resolved and should not be
  * included in this value.
  * 
+ * @param {string} serverid The server id.
  * @param {Array.<string>} jvmOptions An array of the new additional arguments for JVM 
  * initialization.
  */
-exports.setJVMOptions = function(jvmOptions){
-    config.settings.java.jvmOptions = jvmOptions
+exports.setJVMOptions = function(serverid, jvmOptions){
+    config.javaConfig[serverid].jvmOptions = jvmOptions
 }
 
 // Game Settings
